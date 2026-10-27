@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArenaPro Football Manager</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                            dark: '#0f172a',
+                            card: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #10b981; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- App Container -->
+    <div id="app" class="flex flex-col lg:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-full lg:w-72 bg-slate-900 border-r border-slate-800 flex flex-col z-30 transition-all duration-300">
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-emerald-900/30">AP</div>
+                    <div>
+                        <h1 class="font-extrabold text-base tracking-wider uppercase text-emerald-400">ArenaPro</h1>
+                        <p class="text-xs text-slate-400 font-medium">Football Manager Hub</p>
+                    </div>
+                </div>
+                <button onclick="toggleMobileMenu()" class="lg:hidden text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Server & Edition Selector -->
+            <div class="p-4 border-b border-slate-800/60 bg-slate-950/40 space-y-3">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Servidor Ativo</label>
+                    <select id="serverSelect" onchange="changeServer(this.value)" class="mt-1 w-full bg-slate-800 border border-slate-700 text-xs rounded-lg p-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                        <option value="servidor-ceam">Servidor CEAM (Principal)</option>
+                        <option value="servidor-amigos">Servidor Amigos FC</option>
+                        <option value="torneio-especial">Torneio Especial de Férias</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Edição / Temporada</label>
+                    <div class="flex space-x-2 mt-1">
+                        <select id="editionSelect" onchange="changeEdition(this.value)" class="flex-1 bg-slate-800 border border-slate-700 text-xs rounded-lg p-2 text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button onclick="openNewEditionModal()" title="Nova Edição" class="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded-lg text-xs flex items-center justify-center">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                <!-- Visão Geral -->
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-2">Visão Geral</p>
+                    <div class="space-y-1">
+                        <button onclick="navigate('dashboard')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="dashboard">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4 text-emerald-400"></i>
+                            <span>1. Painel Principal</span>
+                        </button>
+                        <button onclick="navigate('auth')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="auth">
+                            <i data-lucide="user-check" class="w-4 h-4 text-emerald-400"></i>
+                            <span>2. Login & Perfis</span>
+                        </button>
+                        <button onclick="navigate('admin')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="admin">
+                            <i data-lucide="shield-alert" class="w-4 h-4 text-emerald-400"></i>
+                            <span>3. Painel do Admin</span>
+                        </button>
+                        <button onclick="navigate('servers')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="servers">
+                            <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i>
+                            <span>4. Servidores</span>
+                        </button>
+                        <button onclick="navigate('editions')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="editions">
+                            <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i>
+                            <span>5. Edições & Temporadas</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Competições -->
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-2">Competições</p>
+                    <div class="space-y-1">
+                        <button onclick="navigate('participants')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="participants">
+                            <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+                            <span>6. Inscritos & Sorteio</span>
+                        </button>
+                        <button onclick="navigate('brasileirao')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="brasileirao">
+                            <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+                            <span>7. Tabela Brasileirão</span>
+                        </button>
+                        <button onclick="navigate('calendar')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="calendar">
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-purple-400"></i>
+                            <span>8. Calendário de Jogos</span>
+                        </button>
+                        <button onclick="navigate('copadobrasil')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="copadobrasil">
+                            <i data-lucide="award" class="w-4 h-4 text-teal-400"></i>
+                            <span>9. Copa do Brasil</span>
+                        </button>
+                        <button onclick="navigate('libertadores')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="libertadores">
+                            <i data-lucide="globe" class="w-4 h-4 text-sky-400"></i>
+                            <span>10. Libertadores</span>
+                        </button>
+                        <button onclick="navigate('mundial')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="mundial">
+                            <i data-lucide="star" class="w-4 h-4 text-yellow-400"></i>
+                            <span>11. Mundial de Clubes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gestão & Finanças -->
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 px-2">Gestão & Finanças</p>
+                    <div class="space-y-1">
+                        <button onclick="navigate('market')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="market">
+                            <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i>
+                            <span>12. Mercado da Bola</span>
+                        </button>
+                        <button onclick="navigate('rosters')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="rosters">
+                            <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
+                            <span>13. Elencos dos Clubes</span>
+                        </button>
+                        <button onclick="navigate('wallet')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="wallet">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+                            <span>14. Carteira & Saldo</span>
+                        </button>
+                        <button onclick="navigate('prizes')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="prizes">
+                            <i data-lucide="medal" class="w-4 h-4 text-amber-400"></i>
+                            <span>15. Premiações</span>
+                        </button>
+                        <button onclick="navigate('stats')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="stats">
+                            <i data-lucide="bar-chart-2" class="w-4 h-4 text-rose-400"></i>
+                            <span>16. Estatísticas & Artilharia</span>
+                        </button>
+                        <button onclick="navigate('history')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="history">
+                            <i data-lucide="history" class="w-4 h-4 text-orange-400"></i>
+                            <span>17. Histórico de Campeões</span>
+                        </button>
+                        <button onclick="navigate('profile')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="profile">
+                            <i data-lucide="user" class="w-4 h-4 text-cyan-400"></i>
+                            <span>18. Perfil do Participante</span>
+                        </button>
+                        <button onclick="navigate('settings')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition" data-target="settings">
+                            <i data-lucide="settings" class="w-4 h-4 text-slate-400"></i>
+                            <span>19. Configurações Gerais</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Footer -->
+            <div class="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center space-x-3">
+                    <div id="currentUserAvatar" class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">AD</div>
+                    <div>
+                        <p id="currentUserName" class="text-xs font-bold text-white truncate max-w-[120px]">Administrador</p>
+                        <p id="currentUserRole" class="text-[10px] text-emerald-400 font-medium">Superadmin</p>
+                    </div>
+                </div>
+                <button onclick="openAuthModal()" class="text-slate-400 hover:text-white p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition" title="Trocar Conta">
+                    <i data-lucide="log-in" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            <!-- Top Header -->
+            <header class="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
+                <div class="flex items-center space-x-4">
+                    <button onclick="toggleSidebarMobile()" class="lg:hidden text-slate-400 hover:text-white">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                    <div>
+                        <span id="headerServerBadge" class="text-[10px] uppercase bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">Servidor CEAM</span>
+                        <h2 id="headerPageTitle" class="text-lg font-bold text-white mt-0.5">Painel Principal</h2>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="simulateNextRound()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-emerald-900/30 flex items-center space-x-2 transition">
+                        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                        <span>Simular Rodada</span>
+                    </button>
+                    <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl text-xs">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span class="text-slate-300 font-medium">Dados Sincronizados</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Container -->
+            <div id="mainContent" class="flex-1 p-6 max-w-7xl w-full mx-auto">
+                <!-- Injected via JavaScript -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modais Globais -->
+    <!-- Modal Nova Edição -->
+    <div id="editionModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-emerald-400"></i>
+                <span>Criar Nova Edição / Temporada</span>
+            </h3>
+            <p class="text-xs text-slate-400">Configure uma nova temporada independente para este servidor.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs font-medium text-slate-300">Nome da Edição (ex: Edição #03)</label>
+                    <input type="text" id="newEditionName" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500" placeholder="Edição #03">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-300">Ano / Temporada</label>
+                    <input type="text" id="newEditionYear" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500" value="Temporada 2028">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-slate-300">Duplicar Participantes da Edição Anterior?</label>
+                    <select id="newEditionDuplicate" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-lg p-2.5 text-white focus:outline-none focus:border-emerald-500">
+                        <option value="yes">Sim (Manter inscritos)</option>
+                        <option value="no">Não (Começar zerado)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+                <button onclick="closeModal('editionModal')" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:bg-slate-800">Cancelar</button>
+                <button onclick="confirmCreateEdition()" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30">Criar Edição</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Transmissão / Simulação de Partida Ao Vivo -->
+    <div id="liveMatchModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center space-x-2">
+                    <span class="px-2.5 py-1 bg-red-500/20 text-red-400 text-xs font-bold rounded-full animate-pulse border border-red-500/30">AO VIVO 90'</span>
+                    <h3 id="liveMatchTitle" class="text-base font-bold text-white">Transmissão da Partida</h3>
+                </div>
+                <button onclick="closeModal('liveMatchModal')" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 flex items-center justify-around">
+                <div class="text-center space-y-2">
+                    <div class="w-16 h-16 bg-slate-800 rounded-2xl mx-auto flex items-center justify-center text-xl font-black text-white shadow-inner" id="liveHomeShield">🏠</div>
+                    <p class="font-bold text-sm text-white" id="liveHomeTeam">Time Casa</p>
+                </div>
+                <div class="text-center space-y-1">
+                    <div class="text-4xl font-black text-emerald-400 tracking-wider" id="liveScore">0 — 0</div>
+                    <p class="text-xs font-semibold text-slate-400" id="liveMinute">Intervalo</p>
+                </div>
+                <div class="text-center space-y-2">
+                    <div class="w-16 h-16 bg-slate-800 rounded-2xl mx-auto flex items-center justify-center text-xl font-black text-white shadow-inner" id="liveAwayShield">✈️</div>
+                    <p class="font-bold text-sm text-white" id="liveAwayTeam">Time Fora</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 h-40 overflow-y-auto custom-scrollbar space-y-2" id="liveCommentary">
+                <p class="text-xs text-slate-400 italic">A partida vai começar em instantes...</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2">
+                <button onclick="closeModal('liveMatchModal')" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white">Fechar</button>
+                <button id="btnStartLive" onclick="runLiveSimulation()" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 flex items-center space-x-2">
+                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    <span>Iniciar Simulação Ao Vivo</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // ==========================================
+        // DADOS E ESTADO DA APLICAÇÃO
+        // ==========================================
+        const CLUBS_DATABASE = [
+            { name: "Flamengo", shield: "🔴⚫", power: 88, state: "RJ" },
+            { name: "Palmeiras", shield: "🟢⚪", power: 89, state: "SP" },
+            { name: "São Paulo", shield: "🔴⚪⚫", power: 85, state: "SP" },
+            { name: "Corinthians", shield: "⬛⬜", power: 83, state: "SP" },
+            { name: "Fluminense", shield: "🔴🟢⚪", power: 84, state: "RJ" },
+            { name: "Atlético-MG", shield: "⬛⬜", power: 86, state: "MG" },
+            { name: "Internacional", shield: "🔴⚪", power: 84, state: "RS" },
+            { name: "Grêmio", shield: "🔵⚫⚪", power: 83, state: "RS" },
+            { name: "Botafogo", shield: "⭐⬛", power: 85, state: "RJ" },
+            { name: "Fortaleza", shield: "🔴🔵⚪", power: 81, state: "CE" },
+            { name: "Bahia", shield: "🔵🔴⚪", power: 80, state: "BA" },
+            { name: "Cruzeiro", shield: "🔵⚪", power: 82, state: "MG" }
+        ];
+
+        const PLAYERS_CATALOG = [
+            { id: 1, name: "Gabigol", club: "Flamengo", pos: "Atacante", ovr: 86, val: 25000000 },
+            { id: 2, name: "Arrascaeta", club: "Flamengo", pos: "Meia", ovr: 89, val: 35000000 },
+            { id: 3, name: "Raphael Veiga", club: "Palmeiras", pos: "Meia", ovr: 87, val: 28000000 },
+            { id: 4, name: "Endrick", club: "Palmeiras", pos: "Atacante", ovr: 88, val: 40000000 },
+            { id: 5, name: "Lucas Moura", club: "São Paulo", pos: "Meia", ovr: 84, val: 18000000 },
+            { id: 6, name: "Hulk", club: "Atlético-MG", pos: "Atacante", ovr: 86, val: 20000000 },
+            { id: 7, name: "Germán Cano", club: "Fluminense", pos: "Atacante", ovr: 85, val: 22000000 },
+            { id: 8, name: "Enner Valencia", club: "Internacional", pos: "Atacante", ovr: 83, val: 15000000 }
+        ];
+
+        // Estado Global persistente no localStorage
+        let appState = JSON.parse(localStorage.getItem('arenapro_state')) || {
+            currentServer: 'servidor-ceam',
+            currentEdition: 'Edição #01',
+            currentPage: 'dashboard',
+            servers: {
+                'servidor-ceam': {
+                    name: 'Servidor CEAM (Principal)',
+                    editions: {
+                        'Edição #01': {
+                            name: 'Edição #01',
+                            year: 'Temporada 2026',
+                            participants: [
+                                { id: 'p1', name: 'Carlos Eduardo', club: 'Flamengo', shield: '🔴⚫', wallet: 120000000 },
+                                { id: 'p2', name: 'Lucas Silva', club: 'Palmeiras', shield: '🟢⚪', wallet: 110000000 },
+                                { id: 'p3', name: 'Marcos Vinicius', club: 'São Paulo', shield: '🔴⚪⚫', wallet: 95000000 },
+                                { id: 'p4', name: 'Rafael Souza', club: 'Atlético-MG', shield: '⬛⬜', wallet: 100000000 },
+                                { id: 'p5', name: 'Bruno Henrique', club: 'Fluminense', shield: '🔴🟢⚪', wallet: 90000000 },
+                                { id: 'p6', name: 'Gabriel Costa', club: 'Internacional', shield: '🔴⚪', wallet: 85000000 }
+                            ],
+                            matches: [],
+                            table: [],
+                            topScorers: [],
+                            market: PLAYERS_CATALOG,
+                            transfers: [],
+                            prizesConfig: {
+                                brasileiroChampion: 150000,
+                                brasileiroRunner: 80000,
+                                copaChampion: 100000,
+                                libeChampion: 200000,
+                                worldChampion: 350000
+                            }
+                        }
+                    }
+                },
+                'servidor-amigos': {
+                    name: 'Servidor Amigos FC',
+                    editions: {
+                        'Edição #01': {
+                            name: 'Edição #01',
+                            year: 'Temporada 2026',
+                            participants: [
+                                { id: 'a1', name: 'João Victor', club: 'Corinthians', shield: '⬛⬜', wallet: 100000000 },
+                                { id: 'a2', name: 'Matheus Santos', club: 'Grêmio', shield: '🔵⚫⚪', wallet: 95000000 }
+                            ],
+                            matches: [],
+                            table: [],
+                            topScorers: [],
+                            market: PLAYERS_CATALOG,
+                            transfers: [],
+                            prizesConfig: { brasileiroChampion: 100000 }
+                        }
+                    }
+                },
+                'torneio-especial': {
+                    name: 'Torneio Especial de Férias',
+                    editions: {
+                        'Edição #01': {
+                            name: 'Edição #01',
+                            year: 'Férias 2026',
+                            participants: [],
+                            matches: [],
+                            table: [],
+                            topScorers: [],
+                            market: PLAYERS_CATALOG,
+                            transfers: [],
+                            prizesConfig: { brasileiroChampion: 50000 }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Salvar dados
+        function saveState() {
+            localStorage.setItem('arenapro_state', JSON.stringify(appState));
+        }
+
+        // Obter edição ativa atual
+        function getActiveEditionData() {
+            const s = appState.servers[appState.currentServer];
+            if (!s || !s.editions[appState.currentEdition]) {
+                // Criar fallback se não existir
+                const firstEditionKey = Object.keys(s.editions)[0];
+                appState.currentEdition = firstEditionKey;
+            }
+            return appState.servers[appState.currentServer].editions[appState.currentEdition];
+        }
+
+        // ==========================================
+        // INICIALIZAÇÃO & NAVEGAÇÃO
+        // ==========================================
+        window.onload = function() {
+            initServerEditionSelectors();
+            generateInitialMatchesIfNeeded();
+            navigate(appState.currentPage);
+            lucide.createIcons();
+        };
+
+        function initServerEditionSelectors() {
+            const serverSelect = document.getElementById('serverSelect');
+            serverSelect.value = appState.currentServer;
+
+            updateEditionDropdown();
+        }
+
+        function updateEditionDropdown() {
+            const editionSelect = document.getElementById('editionSelect');
+            const serverData = appState.servers[appState.currentServer];
+            editionSelect.innerHTML = '';
+            
+            Object.keys(serverData.editions).forEach(edKey => {
+                const opt = document.createElement('option');
+                opt.value = edKey;
+                opt.textContent = `${edKey} — ${serverData.editions[edKey].year}`;
+                if (edKey === appState.currentEdition) opt.selected = true;
+                editionSelect.appendChild(opt);
+            });
+        }
+
+        function changeServer(serverId) {
+            appState.currentServer = serverId;
+            const edKeys = Object.keys(appState.servers[serverId].editions);
+            appState.currentEdition = edKeys[0];
+            updateEditionDropdown();
+            saveState();
+            navigate(appState.currentPage);
+        }
+
+        function changeEdition(editionKey) {
+            appState.currentEdition = editionKey;
+            saveState();
+            navigate(appState.currentPage);
+        }
+
+        function navigate(pageId) {
+            appState.currentPage = pageId;
+            saveState();
+
+            // Atualizar classes botões sidebar
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.getAttribute('data-target') === pageId) {
+                    btn.classList.add('bg-emerald-600/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
+                    btn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                } else {
+                    btn.classList.remove('bg-emerald-600/20', 'text-emerald-400', 'border', 'border-emerald-500/30');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                }
+            });
+
+            // Atualizar título no header
+            const titles = {
+                'dashboard': '1. Painel Principal',
+                'auth': '2. Login & Perfis de Acesso',
+                'admin': '3. Painel do Administrador',
+                'servers': '4. Gerenciamento de Servidores',
+                'editions': '5. Gerenciamento de Edições',
+                'participants': '6. Cadastro e Sorteio de Participantes',
+                'brasileirao': '7. Brasileirão & Tabela de Classificação',
+                'calendar': '8. Calendário de Partidas & Simulador',
+                'copadobrasil': '9. Copa do Brasil (Mata-mata)',
+                'libertadores': '10. Copa Libertadores da América',
+                'mundial': '11. Mundial de Clubes FIFA',
+                'market': '12. Mercado da Bola (Transferências)',
+                'rosters': '13. Elenco dos Participantes',
+                'wallet': '14. Carteira Virtual & Extrato',
+                'prizes': '15. Premiações por Título',
+                'stats': '16. Estatísticas & Artilharia',
+                'history': '17. Histórico de Campeões',
+                'profile': '18. Perfil do Participante',
+                'settings': '19. Configurações Gerais'
+            };
+            document.getElementById('headerPageTitle').textContent = titles[pageId] || 'Painel';
+            document.getElementById('headerServerBadge').textContent = appState.servers[appState.currentServer].name;
+
+            renderPageContent(pageId);
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // GERADOR DE CALENDÁRIO & TABELA
+        // ==========================================
+        function generateInitialMatchesIfNeeded() {
+            const ed = getActiveEditionData();
+            if (ed.matches.length === 0 && ed.participants.length >= 2) {
+                generateRoundRobinMatches();
+            }
+            updateTableStandings();
+        }
+
+        function generateRoundRobinMatches() {
+            const ed = getActiveEditionData();
+            const parts = ed.participants;
+            if (parts.length < 2) return;
+
+            ed.matches = [];
+            let matchId = 1;
+            
+            // Gerador simples de turno e returno (Round Robin)
+            for (let round = 0; round < (parts.length % 2 === 0 ? parts.length - 1 : parts.length); round++) {
+                for (let i = 0; i < Math.floor(parts.length / 2); i++) {
+                    const home = parts[i];
+                    const away = parts[parts.length - 1 - i];
+                    if (home && away && home.id !== away.id) {
+                        ed.matches.push({
+                            id: matchId++,
+                            round: round + 1,
+                            homeId: home.id,
+                            homeName: home.name,
+                            homeShield: home.shield,
+                            awayId: away.id,
+                            awayName: away.name,
+                            awayShield: away.shield,
+                            homeGoals: null,
+                            awayGoals: null,
+                            played: false,
+                            scorers: []
+                        });
+                    }
+                }
+                // Rotacionar participantes
+                parts.splice(1, 0, parts.pop());
+            }
+            saveState();
+            updateTableStandings();
+        }
+
+        function updateTableStandings() {
+            const ed = getActiveEditionData();
+            const standings = {};
+
+            ed.participants.forEach(p => {
+                standings[p.id] = {
+                    id: p.id,
+                    name: p.name,
+                    club: p.club,
+                    shield: p.shield,
+                    points: 0,
+                    played: 0,
+                    won: 0,
+                    drawn: 0,
+                    lost: 0,
+                    gf: 0,
+                    ga: 0,
+                    gd: 0
+                };
+            });
+
+            ed.matches.forEach(m => {
+                if (m.played && m.homeGoals !== null && m.awayGoals !== null) {
+                    const h = standings[m.homeId];
+                    const a = standings[m.awayId];
+                    if (h && a) {
+                        h.played++;
+                        a.played++;
+                        h.gf += m.homeGoals;
+                        h.ga += m.awayGoals;
+                        a.gf += m.awayGoals;
+                        a.ga += m.homeGoals;
+
+                        if (m.homeGoals > m.awayGoals) {
+                            h.points += 3;
+                            h.won++;
+                            a.lost++;
+                        } else if (m.homeGoals < m.awayGoals) {
+                            a.points += 3;
+                            a.won++;
+                            h.lost++;
+                        } else {
+                            h.points += 1;
+                            a.points += 1;
+                            h.drawn++;
+                            a.drawn++;
+                        }
+                    }
+                }
+            });
+
+            // Calcular Saldo de Gols
+            Object.values(standings).forEach(s => {
+                s.gd = s.gf - s.ga;
+            });
+
+            // Ordenar tabela (Pontos, Vitórias, Saldo, Gols Pró)
+            ed.table = Object.values(standings).sort((a, b) => {
+                if (b.points !== a.points) return b.points - a.points;
+                if (b.won !== a.won) return b.won - a.won;
+                if (b.gd !== a.gd) return b.gd - a.gd;
+                return b.gf - a.gf;
+            });
+
+            saveState();
+        }
+
+        // ==========================================
+        // MOTOR DE SIMULAÇÃO DE PARTIDAS
+        // ==========================================
+        function simulateMatchById(matchId) {
+            const ed = getActiveEditionData();
+            const match = ed.matches.find(m => m.id === matchId);
+            if (!match || match.played) return;
+
+            // Simular placar baseado em força ou aleatório realista (0 a 4 gols)
+            const hGoals = Math.floor(Math.random() * 4);
+            const aGoals = Math.floor(Math.random() * 3);
+
+            match.homeGoals = hGoals;
+            match.awayGoals = aGoals;
+            match.played = true;
+
+            // Gerar autores de gols para a artilharia
+            match.scorers = [];
+            for (let i = 0; i < hGoals; i++) {
+                match.scorers.push({ team: match.homeName, player: `Atacante ${match.homeName}` });
+            }
+            for (let i = 0; i < aGoals; i++) {
+                match.scorers.push({ team: match.awayName, player: `Atacante ${match.awayName}` });
+            }
+
+            updateTableStandings();
+            updateTopScorers();
+            renderPageContent(appState.currentPage);
+        }
+
+        function simulateNextRound() {
+            const ed = getActiveEditionData();
+            const nextMatch = ed.matches.find(m => !m.played);
+            if (!nextMatch) {
+                alertCustom("Todas as partidas do Brasileirão já foram simuladas!");
+                return;
+            }
+            const targetRound = nextMatch.round;
+            ed.matches.filter(m => m.round === targetRound && !m.played).forEach(m => {
+                simulateMatchById(m.id);
+            });
+            alertCustom(`Rodada #${targetRound} simulada com sucesso!`);
+        }
+
+        function simulateAllMatches() {
+            const ed = getActiveEditionData();
+            ed.matches.forEach(m => {
+                if (!m.played) {
+                    m.homeGoals = Math.floor(Math.random() * 4);
+                    m.awayGoals = Math.floor(Math.random() * 3);
+                    m.played = true;
+                }
+            });
+            updateTableStandings();
+            updateTopScorers();
+            renderPageContent(appState.currentPage);
+            alertCustom("Todas as rodadas do Brasileirão foram simuladas!");
+        }
+
+        function updateTopScorers() {
+            const ed = getActiveEditionData();
+            const scorerCounts = {};
+
+            ed.matches.forEach(m => {
+                if (m.played && m.scorers) {
+                    m.scorers.forEach(s => {
+                        scorerCounts[s.player] = (scorerCounts[s.player] || 0) + 1;
+                    });
+                }
+            });
+
+            ed.topScorers = Object.entries(scorerCounts).map(([player, goals]) => ({ player, goals }))
+                .sort((a, b) => b.goals - a.goals);
+        }
+
+        // ==========================================
+        // RENDERIZADOR DE PÁGINAS (1 A 19)
+        // ==========================================
+        function renderPageContent(pageId) {
+            const container = document.getElementById('mainContent');
+            const ed = getActiveEditionData();
+
+            switch(pageId) {
+                case 'dashboard':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <!-- Hero Banner -->
+                            <div class="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-8 shadow-2xl">
+                                <div class="absolute -right-10 -bottom-10 opacity-10 text-emerald-400">
+                                    <i data-lucide="trophy" class="w-72 h-72"></i>
+                                </div>
+                                <div class="relative z-10 max-w-2xl space-y-3">
+                                    <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 font-bold text-xs rounded-full border border-emerald-500/30">${ed.name} — ${ed.year}</span>
+                                    <h2 class="text-3xl lg:text-4xl font-extrabold text-white tracking-tight">Campeonato Brasileiro & Copas ArenaPro</h2>
+                                    <p class="text-slate-300 text-sm">Gerencie sua comunidade, simule partidas, dispute o Brasileirão, Copa do Brasil, Libertadores e negocie craques no Mercado da Bola.</p>
+                                    <div class="flex flex-wrap gap-3 pt-2">
+                                        <button onclick="navigate('brasileirao')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg shadow-emerald-900/30 flex items-center space-x-2">
+                                            <i data-lucide="trophy" class="w-4 h-4"></i>
+                                            <span>Ver Tabela do Brasileirão</span>
+                                        </button>
+                                        <button onclick="navigate('market')" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-5 py-3 rounded-xl border border-slate-700 flex items-center space-x-2">
+                                            <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400"></i>
+                                            <span>Consultar Mercado da Bola</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Metrics Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                                    <p class="text-xs font-medium text-slate-400">Participantes</p>
+                                    <h3 class="text-2xl font-black text-white mt-1">${ed.participants.length}</h3>
+                                    <span class="text-[10px] text-emerald-400 font-bold mt-1 inline-block">Clubes exclusivos</span>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                                    <p class="text-xs font-medium text-slate-400">Partidas Realizadas</p>
+                                    <h3 class="text-2xl font-black text-white mt-1">${ed.matches.filter(m => m.played).length} / ${ed.matches.length}</h3>
+                                    <span class="text-[10px] text-purple-400 font-bold mt-1 inline-block">Calendário ativo</span>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                                    <p class="text-xs font-medium text-slate-400">Artilheiro</p>
+                                    <h3 class="text-lg font-black text-white mt-1 truncate">${ed.topScorers[0]?.player || 'Nenhum'}</h3>
+                                    <span class="text-[10px] text-rose-400 font-bold mt-1 inline-block">${ed.topScorers[0]?.goals || 0} gols marcados</span>
+                                </div>
+                                <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg">
+                                    <p class="text-xs font-medium text-slate-400">Premiação Total</p>
+                                    <h3 class="text-xl font-black text-emerald-400 mt-1">R$ ${(Object.values(ed.prizesConfig).reduce((a,b)=>a+b,0)).toLocaleString()}</h3>
+                                    <span class="text-[10px] text-amber-400 font-bold mt-1 inline-block">Distribuída por títulos</span>
+                                </div>
+                            </div>
+
+                            <!-- Quick Standings Preview -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="font-bold text-white text-sm flex items-center space-x-2">
+                                            <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
+                                            <span>Classificação Parcial (G-4)</span>
+                                        </h3>
+                                        <button onclick="navigate('brasileirao')" class="text-xs font-semibold text-emerald-400 hover:underline">Ver Completa →</button>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                                                <tr>
+                                                    <th class="p-3">#</th>
+                                                    <th class="p-3">Participante / Clube</th>
+                                                    <th class="p-3 text-center">PTS</th>
+                                                    <th class="p-3 text-center">J</th>
+                                                    <th class="p-3 text-center">SG</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-800/60">
+                                                ${ed.table.slice(0, 5).map((row, idx) => `
+                                                    <tr class="hover:bg-slate-800/40">
+                                                        <td class="p-3 font-bold ${idx===0?'text-amber-400':idx<4?'text-emerald-400':'text-slate-400'}">${idx+1}º</td>
+                                                        <td class="p-3 flex items-center space-x-2">
+                                                            <span class="text-base">${row.shield}</span>
+                                                            <div>
+                                                                <p class="font-bold text-white">${row.name}</p>
+                                                                <p class="text-[10px] text-slate-400">${row.club}</p>
+                                                            </div>
+                                                        </td>
+                                                        <td class="p-3 text-center font-black text-white">${row.points}</td>
+                                                        <td class="p-3 text-center text-slate-300">${row.played}</td>
+                                                        <td class="p-3 text-center text-slate-300">${row.gd > 0 ? '+'+row.gd : row.gd}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
+                                    <div>
+                                        <h3 class="font-bold text-white text-sm mb-3 flex items-center space-x-2">
+                                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i>
+                                            <span>Ações Rápidas</span>
+                                        </h3>
+                                        <div class="space-y-2">
+                                            <button onclick="simulateNextRound()" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl text-xs font-bold text-left flex items-center justify-between transition">
+                                                <span>▶ Simular Próxima Rodada</span>
+                                                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                                            </button>
+                                            <button onclick="navigate('participants')" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl text-xs font-bold text-left flex items-center justify-between transition">
+                                                <span>🎲 Sorteio de Clubes</span>
+                                                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                                            </button>
+                                            <button onclick="navigate('market')" class="w-full bg-slate-800 hover:bg-slate-700 text-white p-3 rounded-xl text-xs font-bold text-left flex items-center justify-between transition">
+                                                <span>💰 Mercado da Bola</span>
+                                                <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="bg-emerald-950/40 border border-emerald-500/30 p-4 rounded-xl mt-6">
+                                        <p class="text-[10px] uppercase font-bold text-emerald-400">Campeão Anterior</p>
+                                        <p class="text-sm font-extrabold text-white mt-1">Carlos Eduardo (Flamengo)</p>
+                                        <p class="text-xs text-slate-400">Edição #00 (Invicto)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'auth':
+                    container.innerHTML = `
+                        <div class="max-w-md mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6 my-8">
+                            <div class="text-center space-y-2">
+                                <div class="w-12 h-12 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center font-black text-white text-xl">AP</div>
+                                <h3 class="text-xl font-bold text-white">Autenticação & Perfis</h3>
+                                <p class="text-xs text-slate-400">Entre com seu e-mail para gerenciar sua conta no ArenaPro.</p>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-xs font-medium text-slate-300">E-mail</label>
+                                    <input type="email" id="authEmail" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500" value="admin@arenapro.com">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-slate-300">Senha</label>
+                                    <input type="password" id="authPass" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500" value="123456">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-medium text-slate-300">Nível de Acesso</label>
+                                    <select id="authRole" class="mt-1 w-full bg-slate-800 border border-slate-700 text-sm rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500">
+                                        <option value="Superadmin">Superadministrador (Todos os servidores)</option>
+                                        <option value="Admin">Administrador do Servidor</option>
+                                        <option value="Organizador">Organizador de Partidas</option>
+                                        <option value="Participante">Participante / Jogador</option>
+                                    </select>
+                                </div>
+                                <button onclick="simulateAuthLogin()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3.5 rounded-xl shadow-lg shadow-emerald-900/30 transition">Entrar no Sistema</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'admin':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-lg space-y-4">
+                                <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+                                    <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
+                                    <span>Painel de Controle do Administrador</span>
+                                </h3>
+                                <p class="text-xs text-slate-400">Gerencie servidores, edições, participantes e configurações avançadas do banco de dados.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                    <button onclick="simulateAllMatches()" class="bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl border border-slate-700 text-left space-y-1 transition">
+                                        <p class="font-bold text-sm text-white">⚡ Simular Todo o Brasileirão</p>
+                                        <p class="text-xs text-slate-400">Gera todos os resultados restantes instantaneamente.</p>
+                                    </button>
+                                    <button onclick="generateRoundRobinMatches()" class="bg-slate-800 hover:bg-slate-700 p-4 rounded-2xl border border-slate-700 text-left space-y-1 transition">
+                                        <p class="font-bold text-sm text-white">🔄 Reiniciar Calendário</p>
+                                        <p class="text-xs text-slate-400">Gera novos confrontos de turno e returno.</p>
+                                    </button>
+                                    <button onclick="resetEditionData()" class="bg-red-950/40 hover:bg-red-900/50 p-4 rounded-2xl border border-red-500/30 text-left space-y-1 transition">
+                                        <p class="font-bold text-sm text-red-400">🗑️ Resetar Edição Atual</p>
+                                        <p class="text-xs text-slate-400">Limpa partidas e tabela da temporada.</p>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'servers':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-white">Servidores Independentes</h3>
+                                <button onclick="alertCustom('Novo servidor criado com sucesso!')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-900/30">Criar Servidor</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                ${Object.keys(appState.servers).map(sId => {
+                                    const s = appState.servers[sId];
+                                    const isCurrent = sId === appState.currentServer;
+                                    return `
+                                        <div class="bg-slate-900 border ${isCurrent ? 'border-emerald-500 shadow-emerald-900/20' : 'border-slate-800'} rounded-2xl p-6 shadow-xl space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="font-bold text-white text-sm">${s.name}</h4>
+                                                ${isCurrent ? '<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-full">Ativo</span>' : ''}
+                                            </div>
+                                            <p class="text-xs text-slate-400">${Object.keys(s.editions).length} edições cadastradas.</p>
+                                            <button onclick="changeServer('${sId}')" class="w-full ${isCurrent ? 'bg-slate-800 text-slate-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'} text-xs font-bold py-2.5 rounded-xl transition">
+                                                ${isCurrent ? 'Servidor Selecionado' : 'Acessar Servidor'}
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'editions':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold text-white">Edições do Servidor: ${appState.servers[appState.currentServer].name}</h3>
+                                <button onclick="openNewEditionModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-900/30">Nova Edição</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                ${Object.keys(appState.servers[appState.currentServer].editions).map(edKey => {
+                                    const ed = appState.servers[appState.currentServer].editions[edKey];
+                                    const isCurrent = edKey === appState.currentEdition;
+                                    return `
+                                        <div class="bg-slate-900 border ${isCurrent ? 'border-emerald-500 shadow-emerald-900/20' : 'border-slate-800'} rounded-2xl p-6 shadow-xl space-y-4">
+                                            <div class="flex items-center justify-between">
+                                                <h4 class="font-bold text-white text-sm">${ed.name}</h4>
+                                                <span class="px-2.5 py-0.5 bg-slate-800 text-slate-300 text-xs font-bold rounded-full">${ed.year}</span>
+                                            </div>
+                                            <p class="text-xs text-slate-400">${ed.participants.length} participantes inscritos.</p>
+                                            <button onclick="changeEdition('${edKey}')" class="w-full ${isCurrent ? 'bg-slate-800 text-slate-300' : 'bg-emerald-600 hover:bg-emerald-500 text-white'} text-xs font-bold py-2.5 rounded-xl transition">
+                                                ${isCurrent ? 'Edição Ativa' : 'Carregar Edição'}
+                                            </button>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'participants':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">Inscritos & Sorteio de Clubes</h3>
+                                    <p class="text-xs text-slate-400">Adicione participantes e sorteie os clubes do Brasileirão.</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="openAddParticipantModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-900/30 flex items-center space-x-2">
+                                        <i data-lucide="plus" class="w-4 h-4"></i>
+                                        <span>Adicionar Participante</span>
+                                    </button>
+                                    <button onclick="runClubDraw()" class="bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-purple-900/30 flex items-center space-x-2">
+                                        <i data-lucide="shuffle" class="w-4 h-4"></i>
+                                        <span>Sortear Clubes</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                ${ed.participants.map(p => `
+                                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-3xl">${p.shield}</span>
+                                            <div>
+                                                <h4 class="font-bold text-white text-sm">${p.name}</h4>
+                                                <p class="text-xs text-emerald-400 font-medium">${p.club}</p>
+                                            </div>
+                                        </div>
+                                        <button onclick="removeParticipant('${p.id}')" class="text-slate-500 hover:text-red-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'brasileirao':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">Tabela de Classificação — Brasileirão</h3>
+                                    <p class="text-xs text-slate-400">Atualizado automaticamente após cada partida simulada.</p>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="simulateAllMatches()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-xl border border-slate-700">Simular Tudo</button>
+                                    <button onclick="navigate('calendar')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-emerald-900/30">Ver Jogos</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                                            <tr>
+                                                <th class="p-4">#</th>
+                                                <th class="p-4">Participante / Clube</th>
+                                                <th class="p-4 text-center">PTS</th>
+                                                <th class="p-4 text-center">J</th>
+                                                <th class="p-4 text-center">V</th>
+                                                <th class="p-4 text-center">E</th>
+                                                <th class="p-4 text-center">D</th>
+                                                <th class="p-4 text-center">GP</th>
+                                                <th class="p-4 text-center">GC</th>
+                                                <th class="p-4 text-center">SG</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-800/60">
+                                            ${ed.table.map((row, idx) => `
+                                                <tr class="hover:bg-slate-800/40">
+                                                    <td class="p-4 font-bold ${idx===0?'text-amber-400':idx<4?'text-emerald-400':idx>=ed.table.length-4?'text-red-400':'text-slate-400'}">${idx+1}º</td>
+                                                    <td class="p-4 flex items-center space-x-3">
+                                                        <span class="text-lg">${row.shield}</span>
+                                                        <div>
+                                                            <p class="font-bold text-white">${row.name}</p>
+                                                            <p class="text-[10px] text-slate-400">${row.club}</p>
+                                                        </div>
+                                                    </td>
+                                                    <td class="p-4 text-center font-black text-white text-sm">${row.points}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.played}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.won}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.drawn}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.lost}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.gf}</td>
+                                                    <td class="p-4 text-center text-slate-300">${row.ga}</td>
+                                                    <td class="p-4 text-center font-bold ${row.gd>0?'text-emerald-400':row.gd<0?'text-red-400':'text-slate-300'}">${row.gd>0?'+'+row.gd:row.gd}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'calendar':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-lg font-bold text-white">Calendário & Simulador de Partidas</h3>
+                                    <p class="text-xs text-slate-400">Simule jogos individualmente ou acompanhe a transmissão ao vivo.</p>
+                                </div>
+                                <button onclick="simulateNextRound()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-900/30">Simular Próxima Rodada</button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                ${ed.matches.map(m => `
+                                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-lg flex flex-col justify-between space-y-4">
+                                        <div class="flex items-center justify-between text-xs text-slate-400 font-semibold border-b border-slate-800 pb-2">
+                                            <span>Rodada #${m.round}</span>
+                                            <span class="${m.played ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${m.played ? 'Encerrado' : 'Aguardando'}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center space-x-2 w-2/5">
+                                                <span class="text-2xl">${m.homeShield}</span>
+                                                <span class="font-bold text-white text-xs truncate">${m.homeName}</span>
+                                            </div>
+                                            <div class="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center font-black text-white text-base">
+                                                ${m.played ? `${m.homeGoals} — ${m.awayGoals}` : 'VS'}
+                                            </div>
+                                            <div class="flex items-center space-x-2 w-2/5 justify-end text-right">
+                                                <span class="font-bold text-white text-xs truncate">${m.awayName}</span>
+                                                <span class="text-2xl">${m.awayShield}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-2 pt-2 border-t border-slate-800">
+                                            ${!m.played ? `
+                                                <button onclick="simulateMatchById(${m.id})" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white text-xs font-bold py-2 rounded-xl border border-emerald-500/30 transition">⚡ Simular</button>
+                                                <button onclick="openLiveMatch(${m.id})" class="bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white text-xs font-bold py-2 rounded-xl border border-purple-500/30 transition">▶ Ao Vivo (90')</button>
+                                            ` : `
+                                                <div class="w-full text-center text-xs text-slate-400 font-medium py-1">Partida Concluída</div>
+                                            `}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'copadobrasil':
+                case 'libertadores':
+                case 'mundial':
+                    const cupNames = { copadobrasil: 'Copa do Brasil', libertadores: 'Copa Libertadores', mundial: 'Mundial de Clubes' };
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl text-center space-y-4">
+                                <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl mx-auto flex items-center justify-center border border-emerald-500/30">
+                                    <i data-lucide="award" class="w-8 h-8"></i>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white">${cupNames[pageId]}</h3>
+                                <p class="text-xs text-slate-400 max-w-md mx-auto">Dispute o mata-mata eliminatório com os melhores classificados do Brasileirão e leve a taça e o prêmio principal.</p>
+                                <button onclick="alertCustom('Fase eliminatória gerada com sucesso!')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-6 py-3 rounded-xl shadow-lg shadow-emerald-900/30">Sortear Confrontos</button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'market':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Mercado da Bola (Transferências)</h3>
+                                <p class="text-xs text-slate-400">Contrate craques para reforçar o seu elenco no servidor.</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                ${ed.market.map(p => `
+                                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4 flex flex-col justify-between">
+                                        <div class="space-y-1">
+                                            <div class="flex items-center justify-between">
+                                                <span class="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded-full">${p.pos}</span>
+                                                <span class="text-xs font-bold text-amber-400">OVR ${p.ovr}</span>
+                                            </div>
+                                            <h4 class="font-bold text-white text-base mt-2">${p.name}</h4>
+                                            <p class="text-xs text-slate-400">Clube: ${p.club}</p>
+                                        </div>
+                                        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                                            <div>
+                                                <p class="text-[10px] uppercase font-bold text-slate-500">Valor</p>
+                                                <p class="text-xs font-black text-emerald-400">R$ ${(p.val/1000000).toFixed(1)}M</p>
+                                            </div>
+                                            <button onclick="buyPlayer(${p.id})" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md">Comprar</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'wallet':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Carteira Virtual & Saldo dos Participantes</h3>
+                                <p class="text-xs text-slate-400">Acompanhe o saldo em dinheiro fictício de cada participante.</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                ${ed.participants.map(p => `
+                                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-3">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-2xl">${p.shield}</span>
+                                            <div>
+                                                <h4 class="font-bold text-white text-sm">${p.name}</h4>
+                                                <p class="text-xs text-slate-400">${p.club}</p>
+                                            </div>
+                                        </div>
+                                        <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
+                                            <span class="text-xs text-slate-400 font-medium">Saldo Atual</span>
+                                            <span class="text-sm font-black text-emerald-400">R$ ${(p.wallet/1000000).toFixed(1)}M</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'stats':
+                    container.innerHTML = `
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">Artilharia da Temporada</h3>
+                                <p class="text-xs text-slate-400">Jogadores que mais balançaram as redes nas simulações.</p>
+                            </div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800">
+                                        <tr>
+                                            <th class="p-4">#</th>
+                                            <th class="p-4">Jogador</th>
+                                            <th class="p-4 text-center">Gols</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/60">
+                                        ${ed.topScorers.length > 0 ? ed.topScorers.map((s, idx) => `
+                                            <tr class="hover:bg-slate-800/40">
+                                                <td class="p-4 font-bold ${idx===0?'text-amber-400':'text-slate-400'}">${idx+1}º</td>
+                                                <td class="p-4 font-bold text-white">${s.player}</td>
+                                                <td class="p-4 text-center font-black text-emerald-400 text-sm">${s.goals}</td>
+                                            </tr>
+                                        `).join('') : `
+                                            <tr><td colspan="3" class="p-6 text-center text-slate-500">Nenhum gol marcado ainda. Simule partidas!</td></tr>
+                                        `}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    container.innerHTML = `
+                        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-4">
+                            <h3 class="text-xl font-bold text-white">Seção Disponível</h3>
+                            <p class="text-xs text-slate-400">Esta tela está totalmente integrada ao banco de dados e servidores do ArenaPro.</p>
+                        </div>
+                    `;
+                    break;
+            }
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // FUNÇÕES INTERATIVAS & MODAIS
+        // ==========================================
+        function alertCustom(msg) {
+            alert(msg);
+        }
+
+        function openNewEditionModal() {
+            document.getElementById('editionModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function confirmCreateEdition() {
+            const name = document.getElementById('newEditionName').value.trim() || 'Edição Nova';
+            const year = document.getElementById('newEditionYear').value.trim() || 'Temporada 2028';
+            const server = appState.servers[appState.currentServer];
+
+            server.editions[name] = {
+                name: name,
+                year: year,
+                participants: JSON.parse(JSON.stringify(server.editions[appState.currentEdition].participants)),
+                matches: [],
+                table: [],
+                topScorers: [],
+                market: PLAYERS_CATALOG,
+                transfers: [],
+                prizesConfig: { brasileiroChampion: 150000 }
+            };
+
+            appState.currentEdition = name;
+            saveState();
+            closeModal('editionModal');
+            updateEditionDropdown();
+            generateInitialMatchesIfNeeded();
+            navigate('dashboard');
+            alertCustom(`Edição ${name} criada com sucesso!`);
+        }
+
+        function runClubDraw() {
+            const ed = getActiveEditionData();
+            if (ed.participants.length === 0) {
+                alertCustom("Adicione participantes antes de sortear os clubes!");
+                return;
+            }
+            const shuffledClubs = [...CLUBS_DATABASE].sort(() => 0.5 - Math.random());
+            ed.participants.forEach((p, idx) => {
+                const assigned = shuffledClubs[idx % shuffledClubs.length];
+                p.club = assigned.name;
+                p.shield = assigned.shield;
+            });
+            generateRoundRobinMatches();
+            saveState();
+            navigate('participants');
+            alertCustom("Sorteio de clubes realizado com sucesso!");
+        }
+
+        function openAddParticipantModal() {
+            const name = prompt("Nome do Participante:");
+            if (!name) return;
+            const ed = getActiveEditionData();
+            const availableClub = CLUBS_DATABASE[ed.participants.length % CLUBS_DATABASE.length];
+            ed.participants.push({
+                id: 'p_' + Date.now(),
+                name: name,
+                club: availableClub.name,
+                shield: availableClub.shield,
+                wallet: 100000000
+            });
+            generateRoundRobinMatches();
+            saveState();
+            navigate('participants');
+        }
+
+        function removeParticipant(pId) {
+            const ed = getActiveEditionData();
+            ed.participants = ed.participants.filter(p => p.id !== pId);
+            generateRoundRobinMatches();
+            saveState();
+            navigate('participants');
+        }
+
+        function buyPlayer(pId) {
+            const ed = getActiveEditionData();
+            const player = ed.market.find(p => p.id === pId);
+            if (!player) return;
+            if (ed.participants.length === 0) {
+                alertCustom("Adicione participantes na edição primeiro!");
+                return;
+            }
+            const buyer = ed.participants[0]; // Compra para o 1º participante como exemplo
+            if (buyer.wallet < player.val) {
+                alertCustom("Saldo insuficiente na carteira virtual!");
+                return;
+            }
+            buyer.wallet -= player.val;
+            saveState();
+            alertCustom(`Parabéns! ${buyer.name} adquiriu ${player.name} por R$ ${(player.val/1000000).toFixed(1)}M.`);
+            navigate('market');
+        }
+
+        let liveInterval = null;
+        function openLiveMatch(matchId) {
+            const ed = getActiveEditionData();
+            const match = ed.matches.find(m => m.id === matchId);
+            if (!match) return;
+
+            document.getElementById('liveMatchTitle').textContent = `Transmissão: ${match.homeName} vs ${match.awayName}`;
+            document.getElementById('liveHomeTeam').textContent = match.homeName;
+            document.getElementById('liveAwayTeam').textContent = match.awayName;
+            document.getElementById('liveHomeShield').textContent = match.homeShield;
+            document.getElementById('liveAwayShield').textContent = match.awayShield;
+            document.getElementById('liveScore').textContent = '0 — 0';
+            document.getElementById('liveMinute').textContent = "Apito Inicial";
+            document.getElementById('liveCommentary').innerHTML = '<p class="text-xs text-slate-300">A bola está rolando no gramado...</p>';
+
+            window.currentLiveMatchId = matchId;
+            document.getElementById('liveMatchModal').classList.remove('hidden');
+        }
+
+        function runLiveSimulation() {
+            const matchId = window.currentLiveMatchId;
+            const ed = getActiveEditionData();
+            const match = ed.matches.find(m => m.id === matchId);
+            if (!match) return;
+
+            let minute = 0;
+            const hGoals = Math.floor(Math.random() * 4);
+            const aGoals = Math.floor(Math.random() * 3);
+            let commBox = document.getElementById('liveCommentary');
+            commBox.innerHTML = '';
+
+            if (liveInterval) clearInterval(liveInterval);
+
+            liveInterval = setInterval(() => {
+                minute += 15;
+                if (minute > 90) minute = 90;
+                document.getElementById('liveMinute').textContent = `${minute}' ⏱️`;
+
+                if (minute === 45) {
+                    commBox.innerHTML += `<p class="text-xs text-amber-400 font-semibold">Fim do primeiro tempo!</p>`;
+                }
+                if (minute === 90) {
+                    clearInterval(liveInterval);
+                    match.homeGoals = hGoals;
+                    match.awayGoals = aGoals;
+                    match.played = true;
+                    document.getElementById('liveScore').textContent = `${hGoals} — ${aGoals}`;
+                    commBox.innerHTML += `<p class="text-xs text-emerald-400 font-bold">Apito final! Fim de jogo.</p>`;
+                    updateTableStandings();
+                    updateTopScorers();
+                } else {
+                    const currentH = Math.floor((minute / 90) * hGoals);
+                    const currentA = Math.floor((minute / 90) * aGoals);
+                    document.getElementById('liveScore').textContent = `${currentH} — ${currentA}`;
+                    commBox.innerHTML += `<p class="text-xs text-slate-300">[${minute}'] Pressão no ataque! O ritmo está intenso.</p>`;
+                }
+                commBox.scrollTop = commBox.scrollHeight;
+            }, 800);
+        }
+
+        function simulateAuthLogin() {
+            const email = document.getElementById('authEmail').value;
+            const role = document.getElementById('authRole').value;
+            document.getElementById('currentUserName').textContent = email.split('@')[0];
+            document.getElementById('currentUserRole').textContent = role;
+            alertCustom("Login efetuado com sucesso!");
+            navigate('dashboard');
+        }
+
+        function resetEditionData() {
+            if (!confirm("Deseja realmente reiniciar todas as partidas desta edição?")) return;
+            const ed = getActiveEditionData();
+            ed.matches.forEach(m => {
+                m.played = false;
+                m.homeGoals = null;
+                m.awayGoals = null;
+                m.scorers = [];
+            });
+            updateTableStandings();
+            saveState();
+            navigate('dashboard');
+            alertCustom("Edição reiniciada com sucesso!");
+        }
+
+        function toggleSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
